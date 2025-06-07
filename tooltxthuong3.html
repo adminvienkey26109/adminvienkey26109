@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Tool Dự Đoán Tài/Xỉu</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Tool Dự Đoán Tài/Xỉu</h1>
+
+  <label for="ten_game">Tên Game:</label>
+  <select id="ten_game">
+    <option value="HitClub">HitClub</option>
+    <option value="Go88">Go88</option>
+    <option value="Sunwin">Sunwin</option>
+    <option value="KU">KU</option>
+    <option value="RikVip">RikVip</option>
+    <option value="TipClub">TipClub</option>
+    <option value="WWin">WWin</option>
+  </select>
+
+  <label for="ma_phien">Mã Phiên:</label>
+  <input type="text" id="ma_phien" placeholder="VD: 102345">
+
+  <label for="hot">Điểm Xí Ngầu (hot):</label>
+  <input type="number" id="hot" placeholder="Tổng 3 viên xúc xắc">
+
+  <label for="ngau1">Điểm Ngẫu Nhiên (ngau1):</label>
+  <input type="number" id="ngau1" placeholder="Số bất kỳ bạn chọn">
+
+  <button onclick="duDoan()">Dự Đoán</button>
+
+  <div id="result"></div>
+
+  <div id="history">
+    <h2>Lịch Sử Dự Đoán:</h2>
+    <ul id="lich_su"></ul>
+  </div>
+
+  <script src="tooltxthuong3.js"></script>
+</body>
+</html>
