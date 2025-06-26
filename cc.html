@@ -2,87 +2,115 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <title>Tool Tài Xỉu API với Favicon chuẩn</title>
+  <title>Tool Tài Xỉu API + Đếm dòng code</title>
   <style>
-    body { font-family: Arial; padding: 20px; background: #222; color: #eee; text-align: center; }
+    body { font-family: Arial; background: #222; color: #eee; padding: 20px; text-align: center; }
     #dice { font-size: 50px; margin: 10px 0; }
     #result { font-size: 24px; margin: 10px 0; }
     #history { max-width: 600px; margin: 20px auto; text-align: left; }
     .history-item { background: #333; padding: 8px; margin: 5px 0; border-radius: 6px; }
-    button { font-size: 16px; padding: 10px 20px; cursor: pointer; border-radius: 6px; border: none; background: #00bfff; color: white; }
+    button { padding: 10px 20px; border: none; border-radius: 6px; background: #00bfff; color: white; cursor: pointer; font-size: 16px; }
     button:hover { background: #0099cc; }
+    #codeLineCount { margin-top: 20px; font-style: italic; color: #aaa; }
   </style>
-
-  <!-- Favicon trống để tránh lỗi -->
-  <link rel="icon" href="data:," />
 </head>
 <body>
 
-  <h1>Tool Tài Xỉu API (AllOrigins Proxy)</h1>
+  <h1>Tool Tài Xỉu API + Đếm số dòng code</h1>
   <p>Phiên: <span id="phien">--</span></p>
   <div id="dice">🎲🎲🎲</div>
   <div id="total">Tổng: --</div>
   <div id="result">Kết quả: --</div>
-  <button id="btnLoad">Cập nhật phiên mới</button>
+  <button id="btnLoad">Cập nhật dữ liệu</button>
 
   <div id="history">
     <h3>Lịch sử</h3>
   </div>
 
+  <div id="codeLineCount"></div>
+
 <script>
   let history = [];
 
+  // Hàm gọi API qua proxy AllOrigins để tránh CORS
   async function loadData() {
-    const api = "https://taixiu.system32-cloudfare-356783752985678522.monster/api/luckydice/GetSoiCau";
-    // Thêm timestamp chống cache proxy
-    const proxy = "https://api.allorigins.win/raw?url=" + encodeURIComponent(api) + "&timestamp=" + Date.now();
+    const apiUrl = "https://taixiu.system32-cloudfare-356783752985678522.monster/api/luckydice/GetSoiCau";
+    const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(apiUrl) + "&timestamp=" + Date.now();
 
     try {
-      const res = await fetch(proxy, { cache: "no-store" });
+      const res = await fetch(proxyUrl, { cache: "no-store" });
       const data = await res.json();
 
       if (!data.data || !data.data.length) {
-        alert("Không nhận được dữ liệu hợp lệ");
+        alert("Không nhận được dữ liệu hợp lệ từ API");
         return;
       }
 
       const item = data.data[0];
 
-      // Hiển thị kết quả
+      // Hiển thị dữ liệu
       document.getElementById("phien").textContent = item.phien;
-      document.getElementById("dice").textContent = item.ketQua.split("-").map(_ => "🎲").join("");
+      document.getElementById("dice").textContent = item.ketQua.split("-").map(() => "🎲").join("");
       document.getElementById("total").textContent = "Tổng: " + item.tong;
       document.getElementById("result").textContent = "Kết quả: " + item.taiXiu;
 
-      // Thêm vào lịch sử
-      history.unshift({
-        phien: item.phien,
-        dice: item.ketQua,
-        total: item.tong,
-        result: item.taiXiu
-      });
+      // Lưu lịch sử
+      history.unshift(item);
       if (history.length > 10) history.pop();
-
       renderHistory();
 
-    } catch (e) {
-      alert("Lỗi khi gọi API hoặc proxy: " + e.message);
-      console.error(e);
+      // Đếm số dòng code của file này (tự gọi chính file HTML)
+      countCodeLines();
+
+    } catch (err) {
+      alert("Lỗi khi gọi API: " + err.message);
+      console.error(err);
     }
   }
 
+  // Hiển thị lịch sử các phiên
   function renderHistory() {
     const container = document.getElementById("history");
     container.innerHTML = "<h3>Lịch sử</h3>";
     history.forEach(h => {
       const div = document.createElement("div");
       div.className = "history-item";
-      div.textContent = `Phiên ${h.phien} - Dice: ${h.dice} - Tổng: ${h.total} - Kết quả: ${h.result}`;
+      div.textContent = `Phiên ${h.phien} - Dice: ${h.ketQua} - Tổng: ${h.tong} - Kết quả: ${h.taiXiu}`;
       container.appendChild(div);
     });
   }
 
+  // Đếm số dòng code trong file HTML hiện tại và hiển thị
+  async function countCodeLines() {
+    try {
+      // Lấy URL file html hiện tại
+      const url = window.location.href.split('#')[0].split('?')[0];
+
+      // Nếu đang chạy local file://, không đọc được file => hiển thị thông báo
+      if (url.startsWith("file://")) {
+        document.getElementById("codeLineCount").textContent = "Chạy local file, không thể đếm số dòng code.";
+        return;
+      }
+
+      // Fetch file html chính mình
+      const res = await fetch(url);
+      const text = await res.text();
+
+      // Đếm số dòng
+      const lines = text.split(/\r\n|\r|\n/).length;
+
+      document.getElementById("codeLineCount").textContent = "Tổng số dòng code trong file này: " + lines;
+
+    } catch (err) {
+      document.getElementById("codeLineCount").textContent = "Không thể đếm số dòng code: " + err.message;
+      console.error(err);
+    }
+  }
+
   document.getElementById("btnLoad").addEventListener("click", loadData);
+
+  // Nếu bạn muốn tự động load dữ liệu khi mở trang, uncomment dòng này:
+  // loadData();
 </script>
 
 </body>
