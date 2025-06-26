@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Tool Tài Xỉu (GitHub Pages)</title>
+  <style>
+    body { font-family: Arial; background: #121212; color: white; text-align: center; padding: 30px; }
+    .box { background: #1e1e1e; padding: 20px; border-radius: 10px; max-width: 600px; margin: auto; box-shadow: 0 0 10px #00ffff88; }
+    .dice { font-size: 38px; }
+    .result { font-size: 22px; margin-top: 10px; font-weight: bold; }
+    .lich-su { margin-top: 20px; text-align: left; }
+    .item { background: #2a2a2a; padding: 10px; margin: 6px 0; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>🎲 Tool Tài Xỉu API (GitHub Pages)</h2>
+    <p><b>Phiên:</b> <span id="phien">--</span></p>
+    <div class="dice" id="dice">🎲🎲🎲</div>
+    <p><b>Tổng:</b> <span id="tong">--</span></p>
+    <p class="result" id="ketqua">--</p>
+    <div class="lich-su">
+      <h4>Lịch sử:</h4>
+      <div id="lichsu"></div>
+    </div>
+  </div>
+
+  <script>
+    let phienTruoc = 0;
+    const lichSu = [];
+
+    async function fetchData() {
+      try {
+        const api = "https://taixiu.system32-cloudfare-356783752985678522.monster/api/luckydice/GetSoiCau";
+        const corsProxy = "https://corsproxy.io/?" + encodeURIComponent(api);
+        const response = await fetch(corsProxy);
+        const json = await response.json();
+        const item = json.data?.[0];
+        if (!item || !item.phien) return;
+
+        if (item.phien != phienTruoc) {
+          phienTruoc = item.phien;
+          const tong = item.tong;
+          const kq = item.taiXiu;
+          const dice = item.ketQua?.split("-") || ["?", "?", "?"];
+
+          document.getElementById("phien").innerText = item.phien;
+          document.getElementById("tong").innerText = tong;
+          document.getElementById("ketqua").innerText = kq;
+          document.getElementById("dice").innerText = dice.map(() => "🎲").join("");
+
+          lichSu.unshift({ phien: item.phien, tong: tong, kq: kq });
+          if (lichSu.length > 10) lichSu.pop();
+          renderLichSu();
+        }
+      } catch (e) {
+        console.log("Lỗi lấy API:", e.message);
+      }
+    }
+
+    function renderLichSu() {
+      const box = document.getElementById("lichsu");
+      box.innerHTML = "";
+      lichSu.forEach(item => {
+        box.innerHTML += `<div class="item">Phiên ${item.phien} - Tổng: ${item.tong} - ${item.kq}</div>`;
+      });
+    }
+
+    setInterval(fetchData, 5000);
+    fetchData();
+  </script>
+</body>
+</html>
