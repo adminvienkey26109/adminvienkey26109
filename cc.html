@@ -1,73 +1,92 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Tool Tài Xỉu (GitHub Pages)</title>
+  <meta charset="UTF-8" />
+  <title>Tool Tài Xỉu dùng AllOrigins Proxy</title>
   <style>
-    body { font-family: Arial; background: #121212; color: white; text-align: center; padding: 30px; }
-    .box { background: #1e1e1e; padding: 20px; border-radius: 10px; max-width: 600px; margin: auto; box-shadow: 0 0 10px #00ffff88; }
-    .dice { font-size: 38px; }
-    .result { font-size: 22px; margin-top: 10px; font-weight: bold; }
-    .lich-su { margin-top: 20px; text-align: left; }
-    .item { background: #2a2a2a; padding: 10px; margin: 6px 0; border-radius: 6px; }
+    body { font-family: Arial; padding: 20px; background: #222; color: #eee; text-align: center; }
+    #dice { font-size: 50px; margin: 10px 0; }
+    #result { font-size: 24px; margin: 10px 0; }
+    #history { max-width: 600px; margin: 20px auto; text-align: left; }
+    .history-item { background: #333; padding: 8px; margin: 5px 0; border-radius: 6px; }
+    button { font-size: 16px; padding: 10px 20px; cursor: pointer; border-radius: 6px; border: none; background: #00bfff; color: white; }
+    button:hover { background: #0099cc; }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h2>🎲 Tool Tài Xỉu API (GitHub Pages)</h2>
-    <p><b>Phiên:</b> <span id="phien">--</span></p>
-    <div class="dice" id="dice">🎲🎲🎲</div>
-    <p><b>Tổng:</b> <span id="tong">--</span></p>
-    <p class="result" id="ketqua">--</p>
-    <div class="lich-su">
-      <h4>Lịch sử:</h4>
-      <div id="lichsu"></div>
-    </div>
+
+  <h1>Tool Tài Xỉu API</h1>
+  <p>Phiên: <span id="phien">--</span></p>
+  <div id="dice">🎲🎲🎲</div>
+  <div id="total">Tổng: --</div>
+  <div id="result">Kết quả: --</div>
+  <button onclick="loadData()">Cập nhật phiên mới</button>
+
+  <div id="history">
+    <h3>Lịch sử</h3>
   </div>
 
-  <script>
-    let phienTruoc = 0;
-    const lichSu = [];
+<script>
+  let lastPhien = 0;
+  let history = [];
 
-    async function fetchData() {
-      try {
-        const api = "https://taixiu.system32-cloudfare-356783752985678522.monster/api/luckydice/GetSoiCau";
-        const corsProxy = "https://corsproxy.io/?" + encodeURIComponent(api);
-        const response = await fetch(corsProxy);
-        const json = await response.json();
-        const item = json.data?.[0];
-        if (!item || !item.phien) return;
+  async function loadData() {
+    const api = "https://taixiu.system32-cloudfare-356783752985678522.monster/api/luckydice/GetSoiCau";
+    const proxy = "https://api.allorigins.win/raw?url=" + encodeURIComponent(api);
 
-        if (item.phien != phienTruoc) {
-          phienTruoc = item.phien;
-          const tong = item.tong;
-          const kq = item.taiXiu;
-          const dice = item.ketQua?.split("-") || ["?", "?", "?"];
+    try {
+      const res = await fetch(proxy);
+      const data = await res.json();
 
-          document.getElementById("phien").innerText = item.phien;
-          document.getElementById("tong").innerText = tong;
-          document.getElementById("ketqua").innerText = kq;
-          document.getElementById("dice").innerText = dice.map(() => "🎲").join("");
-
-          lichSu.unshift({ phien: item.phien, tong: tong, kq: kq });
-          if (lichSu.length > 10) lichSu.pop();
-          renderLichSu();
-        }
-      } catch (e) {
-        console.log("Lỗi lấy API:", e.message);
+      if (!data.data || !data.data[0]) {
+        alert("Không nhận được dữ liệu hợp lệ");
+        return;
       }
-    }
 
-    function renderLichSu() {
-      const box = document.getElementById("lichsu");
-      box.innerHTML = "";
-      lichSu.forEach(item => {
-        box.innerHTML += `<div class="item">Phiên ${item.phien} - Tổng: ${item.tong} - ${item.kq}</div>`;
+      const item = data.data[0];
+
+      if (item.phien === lastPhien) {
+        alert("Phiên chưa đổi, vui lòng thử lại sau");
+        return;
+      }
+
+      lastPhien = item.phien;
+
+      // Hiển thị kết quả
+      document.getElementById("phien").textContent = item.phien;
+      document.getElementById("dice").textContent = item.ketQua.split("-").map(_ => "🎲").join("");
+      document.getElementById("total").textContent = "Tổng: " + item.tong;
+      document.getElementById("result").textContent = "Kết quả: " + item.taiXiu;
+
+      // Lưu lịch sử
+      history.unshift({
+        phien: item.phien,
+        dice: item.ketQua,
+        total: item.tong,
+        result: item.taiXiu
       });
-    }
 
-    setInterval(fetchData, 5000);
-    fetchData();
-  </script>
+      if (history.length > 10) history.pop();
+
+      renderHistory();
+
+    } catch (e) {
+      alert("Lỗi khi gọi API hoặc proxy: " + e.message);
+    }
+  }
+
+  function renderHistory() {
+    const container = document.getElementById("history");
+    container.innerHTML = "<h3>Lịch sử</h3>";
+
+    history.forEach(h => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      div.textContent = `Phiên ${h.phien} - Dice: ${h.dice} - Tổng: ${h.total} - Kết quả: ${h.result}`;
+      container.appendChild(div);
+    });
+  }
+</script>
+
 </body>
 </html>
