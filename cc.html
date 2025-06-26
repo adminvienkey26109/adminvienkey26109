@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <title>Tool Tài Xỉu dùng AllOrigins Proxy</title>
+  <title>Tool Tài Xỉu API với Favicon chuẩn</title>
   <style>
     body { font-family: Arial; padding: 20px; background: #222; color: #eee; text-align: center; }
     #dice { font-size: 50px; margin: 10px 0; }
@@ -12,45 +12,41 @@
     button { font-size: 16px; padding: 10px 20px; cursor: pointer; border-radius: 6px; border: none; background: #00bfff; color: white; }
     button:hover { background: #0099cc; }
   </style>
+
+  <!-- Favicon trống để tránh lỗi -->
+  <link rel="icon" href="data:," />
 </head>
 <body>
 
-  <h1>Tool Tài Xỉu API</h1>
+  <h1>Tool Tài Xỉu API (AllOrigins Proxy)</h1>
   <p>Phiên: <span id="phien">--</span></p>
   <div id="dice">🎲🎲🎲</div>
   <div id="total">Tổng: --</div>
   <div id="result">Kết quả: --</div>
-  <button onclick="loadData()">Cập nhật phiên mới</button>
+  <button id="btnLoad">Cập nhật phiên mới</button>
 
   <div id="history">
     <h3>Lịch sử</h3>
   </div>
 
 <script>
-  let lastPhien = 0;
   let history = [];
 
   async function loadData() {
     const api = "https://taixiu.system32-cloudfare-356783752985678522.monster/api/luckydice/GetSoiCau";
-    const proxy = "https://api.allorigins.win/raw?url=" + encodeURIComponent(api);
+    // Thêm timestamp chống cache proxy
+    const proxy = "https://api.allorigins.win/raw?url=" + encodeURIComponent(api) + "&timestamp=" + Date.now();
 
     try {
-      const res = await fetch(proxy);
+      const res = await fetch(proxy, { cache: "no-store" });
       const data = await res.json();
 
-      if (!data.data || !data.data[0]) {
+      if (!data.data || !data.data.length) {
         alert("Không nhận được dữ liệu hợp lệ");
         return;
       }
 
       const item = data.data[0];
-
-      if (item.phien === lastPhien) {
-        alert("Phiên chưa đổi, vui lòng thử lại sau");
-        return;
-      }
-
-      lastPhien = item.phien;
 
       // Hiển thị kết quả
       document.getElementById("phien").textContent = item.phien;
@@ -58,27 +54,26 @@
       document.getElementById("total").textContent = "Tổng: " + item.tong;
       document.getElementById("result").textContent = "Kết quả: " + item.taiXiu;
 
-      // Lưu lịch sử
+      // Thêm vào lịch sử
       history.unshift({
         phien: item.phien,
         dice: item.ketQua,
         total: item.tong,
         result: item.taiXiu
       });
-
       if (history.length > 10) history.pop();
 
       renderHistory();
 
     } catch (e) {
       alert("Lỗi khi gọi API hoặc proxy: " + e.message);
+      console.error(e);
     }
   }
 
   function renderHistory() {
     const container = document.getElementById("history");
     container.innerHTML = "<h3>Lịch sử</h3>";
-
     history.forEach(h => {
       const div = document.createElement("div");
       div.className = "history-item";
@@ -86,6 +81,8 @@
       container.appendChild(div);
     });
   }
+
+  document.getElementById("btnLoad").addEventListener("click", loadData);
 </script>
 
 </body>
