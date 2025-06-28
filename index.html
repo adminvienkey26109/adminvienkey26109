@@ -1,0 +1,49 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nguyễn Ngọc Nhi AI</title>
+  <script src="funny.js" defer></script>
+  <script src="voice.js" defer></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="chat-container">
+    <div class="header">🤖 Trợ lý ảo Nguyễn Ngọc Nhi</div>
+    <div class="messages" id="messages"></div>
+    <div class="input-area">
+      <input type="text" id="input" placeholder="Nhập tin nhắn..." />
+      <button onclick="send()">Gửi</button>
+    </div>
+  </div>
+  <script>
+    const messages = document.getElementById("messages");
+    const input = document.getElementById("input");
+
+    function addMessage(content, sender = "bot") {
+      const div = document.createElement("div");
+      div.className = `msg ${sender}`;
+      div.innerText = content;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+      if (sender === "bot") speak(content);
+    }
+
+    function send() {
+      const text = input.value.trim();
+      if (text === "") return;
+      addMessage(text, "user");
+      input.value = "";
+      setTimeout(() => {
+        const reply = getFunnyReply(text);
+        addMessage(reply, "bot");
+      }, 600);
+    }
+
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") send();
+    });
+  </script>
+</body>
+</html>
